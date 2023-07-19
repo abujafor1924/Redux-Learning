@@ -1,84 +1,96 @@
-const { createStore } = require("redux");
+// place holder: https://jsonplaceholder.typicode.com/todos
 
-// defind constent
-const INCREMENT = "INCRIMENT";
-const INCREMENT_BY_VALUE = "INCREMENT_BY_VALUE";
-const DECREMENT = "DECRIMENT";
-const RESET = "RESET";
+const { default: axios } = require("axios");
+const { createStore, applyMiddleware } = require("redux");
+const thunk = require("redux-thunk").default;
+const API_URL = " https://jsonplaceholder.typicode.com/todos";
 
-// stat
-const initialCountStat = {
-  count: 0,
+// state
+// action
+// reducer
+// store
+
+// TODO: state user for practice
+
+// const define
+const GET_TODOS_REQUEST = "GET_TODOS_REQUEST";
+const GET_TODOS_SUCCESS = "GET_TODOS_SUCCESS";
+const GET_TODOS_FAILED = "GET_TODOS_FAILED";
+
+// state
+const initialTodoState = {
+  todos: [],
+  isLoading: false,
+  error: null,
 };
-const initialUserStat = {
-  user: [{ name: "Robiul", age: 43, place: "Bangladesh" }],
-};
+// action
 
-// action -object-type,payload-incriment-dicriment
-
-const incrimentCounter = () => {
+const getTodoRequiest = () => {
   return {
-    type: INCREMENT,
+    type: GET_TODOS_REQUEST,
   };
 };
-const decrimentCounter = () => {
+const getTodoSuccess = (todos) => {
   return {
-    type: DECREMENT,
-    // payload: { name: "ayad" },
+    type: GET_TODOS_SUCCESS,
+    payload: todos,
   };
 };
-const resetCounter = () => {
+const getTodoFailed = (error) => {
   return {
-    type: RESET,
-  };
-};
-const incrimentCounterByValue = (value) => {
-  return {
-    type: INCREMENT_BY_VALUE,
-    payload: value,
+    type: GET_TODOS_FAILED,
+    payload: error,
   };
 };
 
-// reducers for counter
-const countReducer = (state = initialCountStat, action) => {
+// reducer
+
+const todosReducers = (state = initialTodoState, action) => {
   switch (action.type) {
-    // incriment
-    case INCREMENT:
+    case GET_TODOS_REQUEST:
       return {
         ...state,
-        count: state.count + 1,
+        isLoading: true,
       };
-    // Decriment
-    case DECREMENT:
+    case GET_TODOS_SUCCESS:
       return {
         ...state,
-        count: state.count - 1,
+        isLoading: false,
       };
-    // RESET
-    case RESET:
+    case GET_TODOS_FAILED:
       return {
         ...state,
-        count: 0,
+        isLoading: false,
+        error: action.payload,
       };
-    case INCREMENT_BY_VALUE:
-      return {
-        ...state,
-        count: state.count + action.payload,
-      };
+
     default:
-      state;
+      return state;
   }
 };
 
-// redux store-getstate()-dispatch()-subscribe()
+// async acton creted
+const fatchData = () => {
+  return (dispatch) => {
+    dispatch(getTodoRequiest());
+    axios
+      .get(API_URL)
+      .then((res) => {
+        const todos = res.data;
+        const title = todos.map((todo) => todo.title);
+        console.log(title);
+      })
+      .catch((error) => {
+        const errormessage = error.message;
+        dispatch(getTodoFailed(errormessage));
+      });
+  };
+};
 
-const store = createStore(countReducer);
+// store
+const store = createStore(todosReducers, applyMiddleware(thunk));
 store.subscribe(() => {
   console.log(store.getState());
 });
-// store.dispatch(incrimentCounter());
-// store.dispatch(incrimentCounter());
-// store.dispatch(incrimentCounter());
-// store.dispatch(decrimentCounter());
-// store.dispatch(resetCounter());
-store.dispatch(incrimentCounterByValue(5));
+
+store.dispatch(fatchData());
